@@ -81,8 +81,36 @@ const slotMachineCadences: RoundsCadences = { roundOne: [], roundTwo: [], roundT
  * @returns SlotCadence Array of numbers representing the slot machine stop cadence.
  */
 function slotCadence(symbols: Array<SlotCoordinate>): SlotCadence {
-  // Magic
-  return [];
+  // Initialize cadence array with the default cadence value for each column
+  const columnCount = anticipatorConfig.columnSize;
+  const cadence: SlotCadence = Array(columnCount).fill(0).map((_, i) => i * anticipatorConfig.defaultCadence);
+
+  // Count special symbols per column
+  const symbolCountPerColumn: { [key: number]: number } = {};
+  for (const symbol of symbols) {
+    if (symbolCountPerColumn[symbol.column]) {
+      symbolCountPerColumn[symbol.column]++;
+    } else {
+      symbolCountPerColumn[symbol.column] = 1;
+    }
+  }
+
+  // Calculate cadences based on special symbols
+  let currentCadence = anticipatorConfig.defaultCadence;
+  for (let col = 0; col < columnCount; col++) {
+    const specialSymbolCount = symbolCountPerColumn[col] || 0;
+    if (specialSymbolCount >= anticipatorConfig.minToAnticipate) {
+      currentCadence = anticipatorConfig.anticipateCadence;
+      if (specialSymbolCount > anticipatorConfig.maxToAnticipate) {
+        currentCadence = anticipatorConfig.defaultCadence;
+      }
+    } else {
+      currentCadence = anticipatorConfig.defaultCadence;
+    }
+    cadence[col] = col * currentCadence;
+  }
+
+  return cadence;
 }
 
 /**
@@ -98,4 +126,5 @@ function handleCadences(rounds: RoundsSymbols): RoundsCadences {
   return slotMachineCadences;
 }
 
+// Test the implementation
 console.log('CADENCES: ', handleCadences(gameRounds));
